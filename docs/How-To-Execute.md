@@ -51,7 +51,7 @@ In the MS Word documents you can find unrefined notes about how I implemented th
     <br/> \* Do not zip the entire files' container dir, the zip should contain the files in its root.
 16. **Add** Alexa trigger from [_Function Overview > Add Trigger_].
     <br/> \* Take Skill ID from [_Alexa Development Console > Custom > Endpoint_].
-18. **Load** the _.zip_ file with the [_Code source > Upload from > .zip file_] option.
+18. **Upload** the _.zip_ file with the [_Code source > Upload from > .zip file_] option.
     <br/> \* Or [_Código fuente > Cargar desde > Archivo .zip_] in Spanish.
 19. **Click** on "_Deploy_" button.
 20. Go to "_Monitor_" tab and click on "_View CloudWatch logs_" to **see the logs** after every execution of the Skill.
