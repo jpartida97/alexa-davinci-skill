@@ -18,11 +18,7 @@ const CONFIRMATION = ["Está bien. ", "De acuerdo. ", "Seguro. "];
 const CONFIRMATION_REPROMPT = "¿Entonces?";
 const DECREASE_ANSWER_LENGTH_COMMAND = "habla menos";
 const REPEAT_COMMAND = "repite";
-const WAIT_COMMANDS = 
-		[
-			"espera",
-			"sigue esperando"
-		];
+const WAIT_COMMANDS = ["espera", "sigue esperando"];
 const BREAK_10_SECS = "<break time='10s'/>";
 const WAITING_REPROMPT = "<amazon:effect name='whispered'>Sigo aquí.</amazon:effect>";
 const NO_LIST_FORMAT = " Sin formato de lista y de forma corta. ";
