@@ -25,11 +25,11 @@ In the MS Word documents you can find unrefined notes about how I implemented th
     - Tiempo de ejecución: "_Node.js 18.x_"
     - Architecture: "_x86_64_"
 11. **Configure** the ARN of the Lambda function (e.g. "arn:aws:lambda:us-east-#:############:function:<FunctionName>") in the [Alexa Development Console > Custom > Endpoint > Default Region], you can find it at _Function Overview_ in the AWS Lambda function page.
-12. **Change** the _name_ field to match the function name (e.g. "_open-alexa-skill_") in the [package.json](https://github.com/jpartida97/alexa-davinci-skill/blob/a4b3e2c440b95a0adc32887964588c50ed0e1b98/lambda/custom/package.json) file.
+12. **Change** the _name_ field to match the function name (e.g. "_open-alexa-skill_") in the [package.json](https://github.com/jpartida97/alexa-davinci-skill/blob/main/lambda/custom/package.json) file.
 13. **Sign Up** at OpenAI API (https://openai.com/api/).
     <br/> \* The first $18 US dollars are free (it is in that way when the file was updated).
 14. **Create** new API key (https://beta.openai.com/account/api-keys).
-15. **Change** the "_USE-HERE-YOUR-OWN-SECRET-API-KEY_" literal in the [index.js](https://github.com/jpartida97/alexa-davinci-skill/blob/4e8748b45212f249608affd15ecd4c14b3b0e3e3/lambda/custom/index.js) file with your OpenAI API key from (https://beta.openai.com/account/api-keys).
+15. **Change** the "_USE-HERE-YOUR-OWN-SECRET-API-KEY_" literal in the [index.js](https://github.com/jpartida97/alexa-davinci-skill/blob/main/lambda/custom/index.js) file with your OpenAI API key from (https://beta.openai.com/account/api-keys).
 16. **Install** NodeJS and npm in your local.
     <br/> \* https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 14. **Execute** `$ npm install`
