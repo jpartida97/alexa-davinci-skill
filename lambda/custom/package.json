@@ -1,0 +1,17 @@
+{
+  "name": "alexa-davinci-skill",
+  "version": "1.0.0",
+  "description": "Alexa integration with OpenAI",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "JPartida97",
+  "dependencies": {
+    "ask-sdk-core": "^2.12.1",
+    "ask-sdk-model": "^1.0.0",
+    "https": "^1.0.0",
+    "openai": "^3.1.0"
+  }
+}

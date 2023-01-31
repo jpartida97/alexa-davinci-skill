@@ -1,0 +1,43 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "conversación inteligente",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.PauseIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StartOverIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "UndefinedIntent",
+                    "slots": [
+                        {
+                            "name": "Undefined",
+                            "type": "AMAZON.Region"
+                        }
+                    ],
+                    "samples": [
+                        "{Undefined}",
+                        "tell me about {Undefined}"
+                    ]
+                }
+            ],
+            "types": []
+        }
+    }
+}
