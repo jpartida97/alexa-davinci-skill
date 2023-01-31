@@ -15,6 +15,9 @@ Maybe this kind of AI won't be able to show us something that we don't already k
 - The **coding** is made for **NodeJS** and **lacks of refinement**, though it is ready right now for conversation.
 - Everytime I test it I find new **fail scenarios** (the most common are the ones related with lists), probably you will too.
 
+### How to execute the project
+https://github.com/jpartida97/alexa-davinci-skill/blob/main/docs/How-To-Execute.md
+
 ### How to talk with Alexa-Davinci skill
 - "Alexa, abre conversación inteligente." - (to open skill)
 - "Repite." - (to repeat the previous AI response)
