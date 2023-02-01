@@ -4,7 +4,7 @@ If that's your intention, I hope this documentation can help you to create an Al
 
 ### About the development philosophy
 
-The purpose of the OpenAI Davinci AI used here is basically text completion, this is a relevant note to approach the challenges related with its implementation, as it is capable of completing conversation-like texts it is possible to simulate a conversation with it.
+The purpose of the OpenAI Davinci AI used here is basically text completion, this is a relevant note to approach the challenges related with its implementation, and to understand that, as it is capable of completing conversation-like texts it is possible to simulate a conversation with it.
 
 Maybe this kind of AI won't be able to show us something that we don't already know, but it certainly is capable of helping us to make the best use of what we already have.
 
