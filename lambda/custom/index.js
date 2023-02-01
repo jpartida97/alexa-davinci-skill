@@ -10,7 +10,7 @@ const LETS_TALK = "Vamos a conversar. \n\n";
 const SALUTATION = "Hola, ¿de qué quieres hablar?";
 const SALUTATION_REPROMPT = "¿Algo te ha llamado la atención últimamente?";
 const DEFAULT_RESPONSE_LENGTH = 70;
-const INCREASED_RESPONSE_LENGTH = 150;
+const INCREASED_RESPONSE_LENGTH = 140;
 const STOP_COMMANDS = ["es suficiente", "adios", "nos vemos", "detente", "detente", "para", "es suficiente", "eso es todo"];
 const STOP_CONFIRMATION_FAREWELL = "Entendido, fue un placer. ";
 const SIMPLE_FAREWELL = "Nos vemos. ";
@@ -121,8 +121,8 @@ const ResponseHandler = {
 	
 	try {
 		// First attempt to generate answer
-		var talk = attributes.lastUserComment 
-					+ attributes.lastAlexaComment 
+		var talk = attributes.lastUserComment
+					+ attributes.lastAlexaComment
 					+ slotValue;
 		console.log("Talk: " + JSON.stringify(talk));
 		
@@ -143,7 +143,7 @@ const ResponseHandler = {
 			
 			console.log("Alexa list check: " + JSON.stringify(answer));
 			
-			if(answer.search(/(1\.)+/g) != -1 
+			if(answer.search(/(1\.)+/g) != -1
 				|| answer.search(/(\n\s*\-)+/g) != -1
 				|| answer.search(/(\.\s*\-)+/g) != -1
 				|| answer.search(/^(\s*\-)+/g) != -1) {
@@ -179,14 +179,24 @@ const ResponseHandler = {
 			}
 		}
 		
-		// Cleaning and retrieving AI response
+		// Cleaning AI response
 		answer = answer.replace(/[\n|\t]/g, '')
 					   .replace(/\.[\s]*/g, '. ')
 					   .replace(/(\:\s\-\s)+/g, '. ');
-		attributes.lastAlexaComment = answer + INTERACTION_SEPARATOR;
+		var result = answer + INTERACTION_SEPARATOR;
+		console.log("Alexa processed answer: " + JSON.stringify(result));
+		
+		// Storing just the first 100 characters and last 100 characters for next request
+		attributes.lastAlexaComment = result;
+		if(result.length > 200) {
+			attributes.lastAlexaComment = result.substring(0, 99) 
+										+ result.substring(result.length - 101, result.length - 1);
+		}
+		console.log("Alexa stored answer: " + JSON.stringify(attributes.lastAlexaComment));
 		handlerInput.attributesManager.setSessionAttributes(attributes);
-		console.log("Alexa processed answer: " + JSON.stringify(attributes.lastAlexaComment));
-		return handlerInput.responseBuilder.speak(attributes.lastAlexaComment)
+		
+		// Retrieving complete AI response
+		return handlerInput.responseBuilder.speak(result)
 				.reprompt(EJEM_REPROMPT)
 				.getResponse();
 	} catch(error) {
