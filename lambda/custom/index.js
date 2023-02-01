@@ -125,24 +125,30 @@ const ResponseHandler = {
 					+ attributes.lastAlexaComment 
 					+ slotValue;
 		console.log("Talk: " + JSON.stringify(talk));
-		var completion = await openai.createCompletion({
-		  model: OPEN_AI_MODEL,
-		  prompt: talk + INTERACTION_SEPARATOR,
-		  temperature: 0.5,
-		  max_tokens: 10
-		});
 		
-		attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
+		var completion;
 		
-		var answer = completion.data.choices[0].text;
-		
-		console.log("Alexa list check: " + JSON.stringify(answer));
-		
-		if(answer.search(/(1\.)+/g) != -1 
-			|| answer.search(/(\n\s*\-)+/g) != -1
-			|| answer.search(/(\.\s*\-)+/g) != -1
-			|| answer.search(/^(\s*\-)+/g) != -1) {
-			talk += NO_LIST_FORMAT;
+		// Confirm if response is a list when the default response length is configured
+		if(attributes.responseLength != INCREASED_RESPONSE_LENGTH) {
+			completion = await openai.createCompletion({
+			  model: OPEN_AI_MODEL,
+			  prompt: talk + INTERACTION_SEPARATOR,
+			  temperature: 0,
+			  max_tokens: 10
+			});
+			
+			attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
+			
+			var answer = completion.data.choices[0].text;
+			
+			console.log("Alexa list check: " + JSON.stringify(answer));
+			
+			if(answer.search(/(1\.)+/g) != -1 
+				|| answer.search(/(\n\s*\-)+/g) != -1
+				|| answer.search(/(\.\s*\-)+/g) != -1
+				|| answer.search(/^(\s*\-)+/g) != -1) {
+				talk += NO_LIST_FORMAT;
+			}
 		}
 		
 		completion = await openai.createCompletion({
