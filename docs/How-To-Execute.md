@@ -1,6 +1,6 @@
 # How to execute the project
 
-In the MS Word documents you can find unrefined notes about how I implemented this code and how to execute it. Here general notes about how to execute these files.
+In the [MS Word documents](https://github.com/jpartida97/alexa-davinci-skill/tree/main/docs) you can find unrefined notes about how I implemented this code and how to execute it, here I leave general notes about how to execute these files.
 
 1. **Enter** to the Alexa Development Console (https://developer.amazon.com/alexa/console/ask) to administer your skills (created here or in Alexa Skills Blueprints).
 2. **Click** on "_Create Skill_".
@@ -33,7 +33,7 @@ In the MS Word documents you can find unrefined notes about how I implemented th
 16. **Install** NodeJS and npm in your local.
     <br/> \* https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
 14. **Execute** `$ npm install`
-    - **Verify** the _node_modules_ directory was created, in my case all these dependencies were dowloaded:
+    - **Verify** the _node_modules_ directory was created, in my case these dependencies were dowloaded...
       -  ask-sdk-core
       -  ask-sdk-model
       -  ask-sdk-runtime
