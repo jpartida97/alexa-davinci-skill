@@ -1,6 +1,6 @@
 # alexa-davinci-skill
 
-If that's your intention, I hope this documentation can help you to create an Alexa skill that uses the OpenAI Davinci model.
+If that's your intention, I hope this documentation can help you to implement an Alexa skill that uses the OpenAI Davinci model.
 
 ### About the development philosophy
 
