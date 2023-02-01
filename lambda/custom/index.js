@@ -5,6 +5,7 @@ const openai = new OpenAIApi(configuration);
 
 // # # # String literals
 
+const OPEN_AI_MODEL = "text-davinci-003";
 const LETS_TALK = "Vamos a conversar. \n\n";
 const SALUTATION = "Hola, ¿de qué quieres hablar?";
 const SALUTATION_REPROMPT = "¿Algo te ha llamado la atención últimamente?";
@@ -125,7 +126,7 @@ const ResponseHandler = {
 					+ slotValue;
 		console.log("Talk: " + JSON.stringify(talk));
 		var completion = await openai.createCompletion({
-		  model: "text-davinci-003",
+		  model: OPEN_AI_MODEL,
 		  prompt: talk + INTERACTION_SEPARATOR,
 		  temperature: 0.5,
 		  max_tokens: 10
@@ -145,7 +146,7 @@ const ResponseHandler = {
 		}
 		
 		completion = await openai.createCompletion({
-		  model: "text-davinci-003",
+		  model: OPEN_AI_MODEL,
 		  prompt: talk + INTERACTION_SEPARATOR,
 		  temperature: 0.5,
 		  max_tokens: attributes.responseLength
