@@ -1,6 +1,6 @@
 # How to execute the project
 
-In the [MS Word documents](https://github.com/jpartida97/alexa-davinci-skill/tree/main/docs) you can find unrefined notes about how I implemented this code and how to execute it, here I leave general notes about how to execute these files.
+In the [MS Word documents](https://github.com/jpartida97/alexa-davinci-skill/tree/main/docs) you can find unrefined notes about how I implemented this code, the **challenges involved** and how to execute it, here I leave general notes about how to execute these files.
 
 1. **Enter** to the Alexa Development Console (https://developer.amazon.com/alexa/console/ask) to administer your skills (created here or in Alexa Skills Blueprints).
 2. **Click** on "_Create Skill_".
