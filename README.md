@@ -22,3 +22,4 @@ https://github.com/jpartida97/alexa-davinci-skill/blob/main/docs/How-To-Execute.
 - "Alexa, abre conversación inteligente." - (to open skill)
 - "Repite." - (to repeat the previous AI response)
 - "Espera." - (to make Alexa wait 30 seconds for an answer)
+- "Eso es todo. " - (to stop the Alexa Skill)
