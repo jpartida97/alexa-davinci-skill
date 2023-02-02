@@ -223,7 +223,8 @@ const ResponseHandler = {
 		handlerInput.attributesManager.setSessionAttributes(attributes);
 		
 		// Retrieving complete AI response
-		return handlerInput.responseBuilder.speak(attributes.lastAlexaComment)
+		console.log("Alexa answer: " + answer);
+		return handlerInput.responseBuilder.speak(answer)
 				.reprompt(EJEM_REPROMPT)
 				.getResponse();
 	} catch(error) {
