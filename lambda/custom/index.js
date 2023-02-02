@@ -23,13 +23,11 @@ const SALUTATION = "Hola, ¿de qué quieres hablar?";
 const SALUTATION_REPROMPT = "¿Algo te ha llamado la atención últimamente?";
 const DEFAULT_RESPONSE_LENGTH = 70;
 const INCREASED_RESPONSE_LENGTH = 140;
-const STOP_COMMANDS = ["es suficiente", "adios", "nos vemos", "detente", "detente", "para", "es suficiente", "eso es todo"];
+const STOP_COMMANDS = ["es suficiente", "adios", "nos vemos", "basta", "para", "eso es todo"];
 const STOP_CONFIRMATION_FAREWELL = "Entendido, fue un placer. ";
 const SIMPLE_FAREWELL = "Nos vemos. ";
-const INCREASE_ANSWER_LENGTH_COMMAND = "habla más";
 const CONFIRMATION = ["Está bien. ", "De acuerdo. ", "Seguro. "];
 const CONFIRMATION_REPROMPT = "¿Entonces?";
-const DECREASE_ANSWER_LENGTH_COMMAND = "habla menos";
 const REPEAT_COMMAND = "repite";
 const WAIT_COMMANDS = ["espera", "sigue esperando"];
 const BREAK_10_SECS = "<break time='10s'/>";
@@ -39,6 +37,7 @@ const NOT_UNDERSTOOD_REPROMPT = ["¿Tienes algo más que decir?", "Lo lamento...
 const EJEM_REPROMPT = "Ejem. ";
 const ETC = " etcétera. ";
 const TIMEOUT = "Sigo pensando. ¿Sigues ahí?";
+const DATA = "data";
 
 // # # # Handlers
 
@@ -48,11 +47,10 @@ const LaunchRequestHandler = {
   },
   handle(handlerInput) {
 	const attributes = handlerInput.attributesManager.getSessionAttributes();
-	attributes.lastAlexaComment = LETS_TALK;
-	attributes.lastUserComment = "";
 	attributes.stillThinking = false;
 	attributes.previousUserComment = "";
-	attributes.responseLength = DEFAULT_RESPONSE_LENGTH;
+	attributes.lastUserComment = "";
+	attributes.lastAlexaComment = LETS_TALK;
 	handlerInput.attributesManager.setSessionAttributes(attributes);
     return handlerInput.responseBuilder
 			  .speak(SALUTATION)
@@ -73,44 +71,28 @@ const ResponseHandler = {
   	
 	// Retrieving user input
   	let slots = handlerInput.requestEnvelope.request.intent.slots;
-  	var slotValue = "";
-  	for (const slot in slots) {
-  		console.log("SlotName: " + slot.toString().toLowerCase());
-  		if(slot.toString().toLowerCase() == "undefined") {
-  			console.log("SlotValue: " + slots[slot].value);
-  			if(slots[slot].value !== undefined) {
-  				slotValue = slots[slot].value;
-  			}
-  			break;
-  		}
-  	}
+  	var slotValue = slots["Undefined"].value;
+	console.log("SlotValue: " + slotValue);
 	
 	// Stopping Skill command
-	for(index in STOP_COMMANDS) {
-		if(slotValue.toLowerCase().startsWith(STOP_COMMANDS[index])) {
+	for(var stop in STOP_COMMANDS) {
+		if(slotValue.toLowerCase().startsWith(STOP_COMMANDS[stop])) {
 			return handlerInput.responseBuilder.speak(STOP_CONFIRMATION_FAREWELL)
 					.withShouldEndSession(true)
 					.getResponse();
 		}
 	}
 	
+	// Waiting command
+	for(var wait in WAIT_COMMANDS) {
+		if(slotValue.toLowerCase().startsWith(WAIT_COMMANDS[wait])) {
+		return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(3)] + BREAK_10_SECS)
+				.reprompt(BREAK_10_SECS + WAITING_REPROMPT)
+				.getResponse();
+		}
+	}
+	
 	const attributes = handlerInput.attributesManager.getSessionAttributes();
-	
-	// Increasing answer length command
-	if(slotValue.toLowerCase().startsWith(INCREASE_ANSWER_LENGTH_COMMAND)) {
-		attributes.responseLength = INCREASED_RESPONSE_LENGTH;
-		return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(3)])
-				.reprompt(CONFIRMATION_REPROMPT)
-				.getResponse();
-	}
-	
-	// Stablishing default answer length command
-	if(slotValue.toLowerCase().startsWith(DECREASE_ANSWER_LENGTH_COMMAND)) {
-		attributes.responseLength = DEFAULT_RESPONSE_LENGTH;
-		return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(3)])
-				.reprompt(CONFIRMATION_REPROMPT)
-				.getResponse();
-	}
 	
 	// Repeating last AI response command
 	if(slotValue.toLowerCase().startsWith(REPEAT_COMMAND)) {
@@ -119,44 +101,32 @@ const ResponseHandler = {
 				.getResponse();
 	}
 	
-	// Waiting command
-	for(index in WAIT_COMMANDS) {
-		if(slotValue.toLowerCase().startsWith(WAIT_COMMANDS[index])) {
-		return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(3)] + BREAK_10_SECS)
-				.reprompt(BREAK_10_SECS + WAITING_REPROMPT)
-				.getResponse();
-		}
-	}
-	
 	if(!slotValue.endsWith(".")) {
 		slotValue += ". ";
 	}
 	
+	// Preparing prompt with context
+	var talk;
+	if(attributes.stillThinking){
+		talk = attributes.previousUserComment
+				+ attributes.lastAlexaComment
+				+ attributes.lastUserComment;
+	} else {
+		talk = attributes.lastUserComment
+				+ attributes.lastAlexaComment
+				+ slotValue;
+		attributes.previousUserComment = attributes.lastUserComment;
+		attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
+	}
+	console.log("Talk: " + JSON.stringify(talk));
+	
 	try {
-		// Preparing prompt with context
-		var talk;
-		if(attributes.stillThinking){
-			talk = attributes.previousUserComment
-					+ attributes.lastAlexaComment
-					+ attributes.lastUserComment;
-		} else {
-			talk = attributes.lastUserComment
-					+ attributes.lastAlexaComment
-					+ slotValue;
-			attributes.previousUserComment = attributes.lastUserComment;
-			attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
-		}
-		console.log("Talk: " + JSON.stringify(talk));
-		
-		// Making request to OpenAI
-		var longResult = {data: null};
-		var shortResult = {data: null};
-		
+		// OpenAI request function
 		const openai = function(message, tokens, result) {
 			var req = https.request(options, (res) => {
 				res.on('data', (data) => {
 					console.error("Response in tokens " + tokens);
-					result["data"] = data;
+					result[DATA] = data;
 				});
 			}).on('error', (e) => {
 				console.error("Error in tokens " + tokens);
@@ -174,6 +144,7 @@ const ResponseHandler = {
 			req.end();
 		}
 		
+		// Two max_tokens to ensure retrieve an answer in 8 seconds
 		var longLength = INCREASED_RESPONSE_LENGTH;
 		var shortLength = DEFAULT_RESPONSE_LENGTH;
 		if(attributes.stillThinking) {
@@ -181,24 +152,25 @@ const ResponseHandler = {
 			shortLength = Math.ceil(shortLength / 2);
 		}
 		attributes.stillThinking = false;
+		
+		var longResult = {data: null};
+		var shortResult = {data: null};
 		openai(talk + INTERACTION_SEPARATOR, longLength, longResult);
 		openai(talk + INTERACTION_SEPARATOR, shortLength, shortResult);
 		
+		// Checking if longest max_tokens answer before 5 seconds
 		var completion = null;
-		
-		for(i = 0; i < 5; i++) {
+		for(var i = 0; i < 5; i++) {
 			await new Promise(resolve => setTimeout(resolve, i * 500));
-			if(longResult["data"] != null) {
-				completion = longResult["data"];
+			if(longResult[DATA] != null) {
+				completion = longResult[DATA];
 				break;
 			}
 		}
-		
 		if(completion === null) {
-			completion = shortResult["data"];
+			completion = shortResult[DATA];
 		}
-		
-		if(completion === null) {
+		if(completion == null) {
 			attributes.stillThinking = true;
 			handlerInput.attributesManager.setSessionAttributes(attributes);
 			return handlerInput.responseBuilder.speak(TIMEOUT)
@@ -207,7 +179,6 @@ const ResponseHandler = {
 		}
 		
 		var answer = JSON.parse(completion).choices[0].text;
-		
 		console.log("Alexa answer: " + JSON.stringify(answer));
 		
 		// Preventing AI to make multiple questions one after another
@@ -218,42 +189,45 @@ const ResponseHandler = {
 		
 		// Preventing incomplete responses
 		if(!answer.endsWith("?") && !answer.endsWith("!")) {
-			// Preventing comma separated lists to finish incomplete
 			var lastComma = answer.lastIndexOf(",");
-			if(answer.lastIndexOf(".") == -1 && lastComma != -1) {
+			var lastPoint = answer.lastIndexOf(".");
+			var lastExclamation = answer.lastIndexOf("!");
+			if(lastPoint == -1 && lastComma != -1) {
 				answer = answer.substring(0, lastComma + 1) + ETC;
+			} else if(lastExclamation > lastPoint) {
+				answer = answer.substring(0, lastExclamation + 1);
 			} else {
-				answer = answer.substring(0, answer.lastIndexOf(".") + 1);
+				answer = answer.substring(0, lastPoint + 1);
 			}
 		}
 		
 		// Cleaning AI response
-		answer = answer.replace(/[\n|\t]/g, '')						// New lines and tabs
+		answer = answer.replace(/[\n|\t]/g, '')						// No new lines and tabs
 					   .replace(/\.[\s]*/g, '. ')					// Points without spaces
-					   .replace(/(\:\s\-\s)+/g, '. ')				// Start of list ": -"
+					   .replace(/(\:\s*\-\s*)+/g, '. ')				// Start of list ": -"
 					   .replace(/([\.\s]+\-\s*)+/g, ', ')			// Lists items "- one. - two.-three-four -five"
 					   .replace(/([0-9]+\.)$/g, ETC)				// Separate numbered lists "8. One 9. Two..."
-					   .replace(/\&/g, " y ")
+					   .replace(/\&/g, " y ")						// Alexa cannot say &
 					   .replace(/([0-9]+\.)/g, ", ");				// Short numbered list ". 9.$"
 		
-		var result = answer + INTERACTION_SEPARATOR;
-		console.log("Alexa processed answer: " + JSON.stringify(result));
+		answer += INTERACTION_SEPARATOR;
+		console.log("Alexa processed answer: " + JSON.stringify(answer));
 		
 		// Storing just the first 100 characters and last 100 characters for next request
-		attributes.lastAlexaComment = result;
-		if(result.length > 200) {
-			attributes.lastAlexaComment = result.substring(0, 99) 
-										+ result.substring(result.length - 101, result.length - 1);
+		attributes.lastAlexaComment = answer;
+		if(answer.length > 200) {
+			attributes.lastAlexaComment = answer.substring(0, 99) 
+										+ answer.substring(answer.length - 101, answer.length - 1);
 		}
 		console.log("Alexa stored answer: " + JSON.stringify(attributes.lastAlexaComment));
 		handlerInput.attributesManager.setSessionAttributes(attributes);
 		
 		// Retrieving complete AI response
-		return handlerInput.responseBuilder.speak(result)
+		return handlerInput.responseBuilder.speak(attributes.lastAlexaComment)
 				.reprompt(EJEM_REPROMPT)
 				.getResponse();
 	} catch(error) {
-		console.log("Error: " + error);
+		console.log("Error in OpenAI request: " + error);
 	}
 	
 	return handlerInput.responseBuilder.speak(NOT_UNDERSTOOD[getRandom(2)])
