@@ -1,12 +1,24 @@
 const Alexa = require('ask-sdk-core');
-const { Configuration, OpenAIApi } = require("openai");
-const configuration = new Configuration({apiKey: "USE-HERE-YOUR-OWN-SECRET-API-KEY"});
-const openai = new OpenAIApi(configuration);
+const https = require('https');
+
+const options = {
+	hostname: 'api.openai.com',
+	port: 443,
+	path: '/v1/completions',
+	method: 'POST',
+	headers: {
+		'content-type': "application/json",
+		'authorization': "Bearer USE-HERE-YOUR-OWN-SECRET-API-KEY"
+	},
+	timeout: 5000
+};
 
 // # # # String literals
 
 const OPEN_AI_MODEL = "text-davinci-003";
-const LETS_TALK = "Vamos a conversar. \n\n";
+const END_OF_TEXT = "\n\n";
+const INTERACTION_SEPARATOR = END_OF_TEXT + " ";
+const LETS_TALK = "Vamos a conversar. " + INTERACTION_SEPARATOR;
 const SALUTATION = "Hola, ¿de qué quieres hablar?";
 const SALUTATION_REPROMPT = "¿Algo te ha llamado la atención últimamente?";
 const DEFAULT_RESPONSE_LENGTH = 70;
@@ -22,12 +34,11 @@ const REPEAT_COMMAND = "repite";
 const WAIT_COMMANDS = ["espera", "sigue esperando"];
 const BREAK_10_SECS = "<break time='10s'/>";
 const WAITING_REPROMPT = "<amazon:effect name='whispered'>Sigo aquí.</amazon:effect>";
-const NO_LIST_FORMAT = " Sin formato de lista y de forma corta. ";
 const NOT_UNDERSTOOD = ["Lo lamento, no te entendí.", "Lo lamento..., creo que no entendí."];
 const NOT_UNDERSTOOD_REPROMPT = ["¿Tienes algo más que decir?", "Lo lamento..., creo que no entendí."];
 const EJEM_REPROMPT = "Ejem. ";
 const ETC = " etcétera. ";
-const INTERACTION_SEPARATOR = "\n\n ";
+const TIMEOUT = "Sigo pensando. ¿Sigues ahí?";
 
 // # # # Handlers
 
@@ -39,6 +50,8 @@ const LaunchRequestHandler = {
 	const attributes = handlerInput.attributesManager.getSessionAttributes();
 	attributes.lastAlexaComment = LETS_TALK;
 	attributes.lastUserComment = "";
+	attributes.stillThinking = false;
+	attributes.previousUserComment = "";
 	attributes.responseLength = DEFAULT_RESPONSE_LENGTH;
 	handlerInput.attributesManager.setSessionAttributes(attributes);
     return handlerInput.responseBuilder
@@ -120,45 +133,80 @@ const ResponseHandler = {
 	}
 	
 	try {
-		// First attempt to generate answer
-		var talk = attributes.lastUserComment
+		// Preparing prompt with context
+		var talk;
+		if(attributes.stillThinking){
+			talk = attributes.previousUserComment
+					+ attributes.lastAlexaComment
+					+ attributes.lastUserComment;
+		} else {
+			talk = attributes.lastUserComment
 					+ attributes.lastAlexaComment
 					+ slotValue;
+			attributes.previousUserComment = attributes.lastUserComment;
+			attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
+		}
 		console.log("Talk: " + JSON.stringify(talk));
 		
-		var completion;
+		// Making request to OpenAI
+		var longResult = {data: null};
+		var shortResult = {data: null};
 		
-		// Confirm if response is a list when the default response length is configured
-		if(attributes.responseLength != INCREASED_RESPONSE_LENGTH) {
-			completion = await openai.createCompletion({
-			  model: OPEN_AI_MODEL,
-			  prompt: talk + INTERACTION_SEPARATOR,
-			  temperature: 0,
-			  max_tokens: 10
+		const openai = function(message, tokens, result) {
+			var req = https.request(options, (res) => {
+				res.on('data', (data) => {
+					console.error("Response in tokens " + tokens);
+					result["data"] = data;
+				});
+			}).on('error', (e) => {
+				console.error("Error in tokens " + tokens);
 			});
-			
-			attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
-			
-			var answer = completion.data.choices[0].text;
-			
-			console.log("Alexa list check: " + JSON.stringify(answer));
-			
-			if(answer.search(/(1\.)+/g) != -1
-				|| answer.search(/(\n\s*\-)+/g) != -1
-				|| answer.search(/(\.\s*\-)+/g) != -1
-				|| answer.search(/^(\s*\-)+/g) != -1) {
-				talk += NO_LIST_FORMAT;
+			req.on('timeout', () => {
+				console.log("Timeout happened in tokens " + tokens);
+				req.abort();
+			});
+			req.write(JSON.stringify({
+				model: OPEN_AI_MODEL,
+				prompt: message,
+				temperature: 0.5,
+				max_tokens: tokens
+			}));
+			req.end();
+		}
+		
+		var longLength = INCREASED_RESPONSE_LENGTH;
+		var shortLength = DEFAULT_RESPONSE_LENGTH;
+		if(attributes.stillThinking) {
+			longLength = Math.ceil(longLength / 2);
+			shortLength = Math.ceil(shortLength / 2);
+		}
+		attributes.stillThinking = false;
+		openai(talk + INTERACTION_SEPARATOR, longLength, longResult);
+		openai(talk + INTERACTION_SEPARATOR, shortLength, shortResult);
+		
+		var completion = null;
+		
+		for(i = 0; i < 5; i++) {
+			await new Promise(resolve => setTimeout(resolve, i * 500));
+			if(longResult["data"] != null) {
+				completion = longResult["data"];
+				break;
 			}
 		}
 		
-		completion = await openai.createCompletion({
-		  model: OPEN_AI_MODEL,
-		  prompt: talk + INTERACTION_SEPARATOR,
-		  temperature: 0.5,
-		  max_tokens: attributes.responseLength
-		});
+		if(completion === null) {
+			completion = shortResult["data"];
+		}
 		
-		answer = completion.data.choices[0].text;
+		if(completion === null) {
+			attributes.stillThinking = true;
+			handlerInput.attributesManager.setSessionAttributes(attributes);
+			return handlerInput.responseBuilder.speak(TIMEOUT)
+				.reprompt(EJEM_REPROMPT)
+				.getResponse();
+		}
+		
+		var answer = JSON.parse(completion).choices[0].text;
 		
 		console.log("Alexa answer: " + JSON.stringify(answer));
 		
@@ -180,9 +228,14 @@ const ResponseHandler = {
 		}
 		
 		// Cleaning AI response
-		answer = answer.replace(/[\n|\t]/g, '')
-					   .replace(/\.[\s]*/g, '. ')
-					   .replace(/(\:\s\-\s)+/g, '. ');
+		answer = answer.replace(/[\n|\t]/g, '')						// New lines and tabs
+					   .replace(/\.[\s]*/g, '. ')					// Points without spaces
+					   .replace(/(\:\s\-\s)+/g, '. ')				// Start of list ": -"
+					   .replace(/([\.\s]+\-\s*)+/g, ', ')			// Lists items "- one. - two.-three-four -five"
+					   .replace(/([0-9]+\.)$/g, ETC)				// Separate numbered lists "8. One 9. Two..."
+					   .replace(/\&/g, " y ")
+					   .replace(/([0-9]+\.)/g, ", ");				// Short numbered list ". 9.$"
+		
 		var result = answer + INTERACTION_SEPARATOR;
 		console.log("Alexa processed answer: " + JSON.stringify(result));
 		
