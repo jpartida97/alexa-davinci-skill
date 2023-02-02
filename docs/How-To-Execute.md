@@ -9,7 +9,7 @@ In the [MS Word documents](https://github.com/jpartida97/alexa-davinci-skill/tre
     - Model: "_Custom_"
     - Hosting services: "_Alexa-hosted (Node.js)_"
     - Template: "_Start from Scratch_"
-4. Once in the Alexa Development Console, go to [_Interaction Model > JSON Editor_] and **paste the code** in the file [/models/alexa_davinci_skill_interaction_model.json](https://github.com/jpartida97/alexa-davinci-skill/blob/a4b3e2c440b95a0adc32887964588c50ed0e1b98/models/alexa_davinci_skill_interaction_model.json).
+4. Go to the section [_Interaction Model > JSON Editor_] and **paste the code** in the file [/models/alexa_davinci_skill_interaction_model.json](https://github.com/jpartida97/alexa-davinci-skill/blob/a4b3e2c440b95a0adc32887964588c50ed0e1b98/models/alexa_davinci_skill_interaction_model.json).
     - If you want to change the invocation phrase go to [_Custom > Invocations > Skill Invocation Name_].
     - I configure Routines in the Alexa phone app to open the Skill with any phrase I want.
       <br/> \* Use the "_Personalized_" action to make Alexa open the Skill.
