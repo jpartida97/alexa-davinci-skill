@@ -1,6 +1,11 @@
 const Alexa = require('ask-sdk-core');
 const https = require('https');
 
+// # # # OpenAI configuration
+
+const INCREASED_RESPONSE_LENGTH = 150;
+const DEFAULT_RESPONSE_LENGTH = 70;
+const TIMEOUT_VALUE = 5;
 const options = {
 	hostname: 'api.openai.com',
 	port: 443,
@@ -10,20 +15,19 @@ const options = {
 		'content-type': "application/json",
 		'authorization': "Bearer USE-HERE-YOUR-OWN-SECRET-API-KEY"
 	},
-	timeout: 5000
+	timeout: (TIMEOUT_VALUE * 1000)
 };
 
 // # # # String literals
 
-const OPEN_AI_MODEL = "text-davinci-003";
+const OPENAI_DAVINCI_MODEL = "text-davinci-003";
+const OPENAI_CURIE_MODEL = "text-curie-001";
 const END_OF_TEXT = "\n\n";
 const INTERACTION_SEPARATOR = END_OF_TEXT + " ";
 const LETS_TALK = "Vamos a conversar. " + INTERACTION_SEPARATOR;
 const SALUTATION = "Hola, ¿de qué quieres hablar?";
 const SALUTATION_REPROMPT = "¿Algo te ha llamado la atención últimamente?";
-const DEFAULT_RESPONSE_LENGTH = 70;
-const INCREASED_RESPONSE_LENGTH = 140;
-const STOP_COMMANDS = ["es suficiente", "adios", "nos vemos", "basta", "para", "eso es todo"];
+const STOP_COMMANDS = ["es suficiente", "adios", "nos vemos", "basta", "eso es todo"];
 const STOP_CONFIRMATION_FAREWELL = "Entendido, fue un placer. ";
 const SIMPLE_FAREWELL = "Nos vemos. ";
 const CONFIRMATION = ["Está bien. ", "De acuerdo. ", "Seguro. "];
@@ -37,13 +41,14 @@ const NOT_UNDERSTOOD_REPROMPT = ["¿Tienes algo más que decir?", "Lo lamento...
 const EJEM_REPROMPT = "Ejem. ";
 const ETC = " etcétera. ";
 const TIMEOUT = "Sigo pensando. ¿Sigues ahí?";
+const COMPLEX_TOPIC = "No se me viene nada a la mente, ¿tú que piensas?";
 const DATA = "data";
 
 // # # # Handlers
 
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
-    return handlerInput.requestEnvelope.request.type === `LaunchRequest`;
+    return handlerInput.requestEnvelope.request.type === 'LaunchRequest';
   },
   handle(handlerInput) {
 	const attributes = handlerInput.attributesManager.getSessionAttributes();
@@ -71,7 +76,11 @@ const ResponseHandler = {
   	
 	// Retrieving user input
   	let slots = handlerInput.requestEnvelope.request.intent.slots;
-  	var slotValue = slots["Undefined"].value;
+	var slotValue = "";
+	if(slots["Undefined"] != null) {
+		slotValue = slots["Undefined"].value;
+	}
+	
 	console.log("SlotValue: " + slotValue);
 	
 	// Stopping Skill command
@@ -122,21 +131,23 @@ const ResponseHandler = {
 	
 	try {
 		// OpenAI request function
-		const openai = function(message, tokens, result) {
+		const openai = function(message, tokens, result, model) {
 			var req = https.request(options, (res) => {
 				res.on('data', (data) => {
-					console.error("Response in tokens " + tokens);
+					console.log("Response in tokens " + tokens);
+					console.log("Response is " + data);
 					result[DATA] = data;
 				});
 			}).on('error', (e) => {
 				console.error("Error in tokens " + tokens);
-			});
+				console.error(e);
+			});;
 			req.on('timeout', () => {
 				console.log("Timeout happened in tokens " + tokens);
 				req.abort();
 			});
 			req.write(JSON.stringify({
-				model: OPEN_AI_MODEL,
+				model: model,
 				prompt: message,
 				temperature: 0.5,
 				max_tokens: tokens
@@ -145,22 +156,20 @@ const ResponseHandler = {
 		}
 		
 		// Two max_tokens to ensure retrieve an answer in 8 seconds
-		var longLength = INCREASED_RESPONSE_LENGTH;
-		var shortLength = DEFAULT_RESPONSE_LENGTH;
+		var longResult = {"data": null};
+		var shortResult = {"data": null};
 		if(attributes.stillThinking) {
-			longLength = Math.ceil(longLength / 2);
-			shortLength = Math.ceil(shortLength / 2);
+			openai(talk + END_OF_TEXT, DEFAULT_RESPONSE_LENGTH, longResult, OPENAI_DAVINCI_MODEL);
+			openai(talk + END_OF_TEXT, DEFAULT_RESPONSE_LENGTH, shortResult, OPENAI_CURIE_MODEL);
+		} else {
+			openai(talk + END_OF_TEXT, INCREASED_RESPONSE_LENGTH, longResult, OPENAI_DAVINCI_MODEL);
+			openai(talk + END_OF_TEXT, DEFAULT_RESPONSE_LENGTH, shortResult, OPENAI_DAVINCI_MODEL);
 		}
 		attributes.stillThinking = false;
 		
-		var longResult = {data: null};
-		var shortResult = {data: null};
-		openai(talk + INTERACTION_SEPARATOR, longLength, longResult);
-		openai(talk + INTERACTION_SEPARATOR, shortLength, shortResult);
-		
 		// Checking if longest max_tokens answer before 5 seconds
 		var completion = null;
-		for(var i = 0; i < 5; i++) {
+		for(var i = 0; i < TIMEOUT_VALUE; i++) {
 			await new Promise(resolve => setTimeout(resolve, i * 500));
 			if(longResult[DATA] != null) {
 				completion = longResult[DATA];
@@ -170,7 +179,7 @@ const ResponseHandler = {
 		if(completion === null) {
 			completion = shortResult[DATA];
 		}
-		if(completion == null) {
+		if(completion == null || completion == "") {
 			attributes.stillThinking = true;
 			handlerInput.attributesManager.setSessionAttributes(attributes);
 			return handlerInput.responseBuilder.speak(TIMEOUT)
@@ -199,6 +208,14 @@ const ResponseHandler = {
 			} else {
 				answer = answer.substring(0, lastPoint + 1);
 			}
+		}
+		
+		if(answer == "") {
+			attributes.stillThinking = true;
+			handlerInput.attributesManager.setSessionAttributes(attributes);
+			return handlerInput.responseBuilder.speak(COMPLEX_TOPIC)
+				.reprompt(EJEM_REPROMPT)
+				.getResponse();
 		}
 		
 		// Cleaning AI response
@@ -240,7 +257,7 @@ const ExitHandler = {
   canHandle(handlerInput) {
     console.log("Inside ExitHandler");
     const request = handlerInput.requestEnvelope.request;
-    return request.type === `IntentRequest` && (
+    return request.type === 'IntentRequest' && (
               request.intent.name === 'AMAZON.StopIntent' ||
               request.intent.name === 'AMAZON.PauseIntent' ||
               request.intent.name === 'AMAZON.CancelIntent'
@@ -259,7 +276,7 @@ const SessionEndedRequestHandler = {
     return handlerInput.requestEnvelope.request.type === 'SessionEndedRequest';
   },
   handle(handlerInput) {
-    console.log(`La sesión terminó porque ${JSON.stringify(handlerInput.requestEnvelope)}`);
+    console.log('La sesión terminó porque ${JSON.stringify(handlerInput.requestEnvelope)}');
     return handlerInput.responseBuilder.getResponse();
   },
 };
@@ -271,8 +288,8 @@ const ErrorHandler = {
   },
   handle(handlerInput, error) {
     console.log("Inside ErrorHandler - handle");
-    console.log(`Error handled: ${JSON.stringify(error)}`);
-    console.log(`Handler Input: ${JSON.stringify(handlerInput)}`);
+    console.log("Error handled: ${JSON.stringify(error)}");
+    console.log("Handler Input: ${JSON.stringify(handlerInput)}");
     return handlerInput.responseBuilder
       .speak(NOT_UNDERSTOOD[getRandom(2)])
       .reprompt(NOT_UNDERSTOOD_REPROMPT[getRandom(2)])
