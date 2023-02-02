@@ -24,7 +24,7 @@ In the [MS Word documents](https://github.com/jpartida97/alexa-davinci-skill/tre
     - Function name (e.g. "_open-alexa-skill_", "_alexa-ai_", etc.)
     - Tiempo de ejecución: "_Node.js 18.x_"
     - Architecture: "_x86_64_"
-11. **Configure** the ARN of the Lambda function (e.g. "arn:aws:lambda:us-east-#:############:function:<FunctionName>") in the [Alexa Development Console > Custom > Endpoint > Default Region], you can find it at _Function Overview_ in the AWS Lambda function page.
+11. **Configure** the ARN of the Lambda function (e.g. "arn:aws:lambda:us-east-#:############:function:<FunctionName>") in the [_Alexa Development Console > Custom > Endpoint > Default Region_], you can find it at _Function Overview_ in the AWS Lambda function page.
 12. **Change** the _name_ field to match the function name (e.g. "_open-alexa-skill_") in the [package.json](https://github.com/jpartida97/alexa-davinci-skill/blob/main/lambda/custom/package.json) file.
 13. **Sign Up** at OpenAI API (https://openai.com/api/).
     <br/> \* The first $18 US dollars are free (it is in that way when the file was updated).
