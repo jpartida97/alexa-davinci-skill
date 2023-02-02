@@ -37,16 +37,7 @@ In the [MS Word documents](https://github.com/jpartida97/alexa-davinci-skill/tre
       -  ask-sdk-core
       -  ask-sdk-model
       -  ask-sdk-runtime
-      -  asynckit
-      -  axios
-      -  combined-stream
-      -  delayed-stream
-      -  follow-redirects
-      -  form-data
       -  https
-      -  mime-db
-      -  mime-types
-      -  openai
 15. **Zip** the project files (node_modules dir, index.js, package.json and package-lock.json) into a single file.
     <br/> \* Do not zip the entire files' container dir, the zip should contain the files in its root.
 16. **Add** Alexa trigger from [_Function Overview > Add Trigger_].
