@@ -6,6 +6,7 @@ const https = require('https');
 const INCREASED_RESPONSE_LENGTH = 150;
 const DEFAULT_RESPONSE_LENGTH = 70;
 const TIMEOUT_VALUE = 5;
+const TEMPERATURE = 0.6;
 const options = {
 	hostname: 'api.openai.com',
 	port: 443,
@@ -38,10 +39,21 @@ const BREAK_10_SECS = "<break time='10s'/>";
 const WAITING_REPROMPT = "<amazon:effect name='whispered'>Sigo aquí.</amazon:effect>";
 const NOT_UNDERSTOOD = ["Lo lamento, no te entendí.", "Lo lamento..., creo que no entendí."];
 const NOT_UNDERSTOOD_REPROMPT = ["¿Tienes algo más que decir?", "Lo lamento..., creo que no entendí."];
-const EJEM_REPROMPT = "Ejem. ";
+const EJEM_REPROMPT = "<amazon:effect name='whispered'>Ejem. </amazon:effect>";
 const ETC = " etcétera. ";
-const TIMEOUT = "Sigo pensando. ¿Sigues ahí?";
-const COMPLEX_TOPIC = "No se me viene nada a la mente, ¿tú que piensas?";
+const USER_TAG = "[Persona_A] ";
+const MODEL_TAG = "[Alexa] ";
+const PERSONALITY = "Alexa es cálida, humanista y le gusta la ciencia ficción. \n\n";
+const TIMEOUT = [
+					"Sigo pensando. ¿Sigues ahí?", 
+					"Es algo complejo, ¿me esperas?", 
+					"Estoy procesando, ¿puedes esperarme?",
+					"Es un tema complejo, ¿me das un momento?"
+				];
+const COMPLEX_TOPIC = [
+					"No se me viene nada a la mente, ¿tú que piensas?", 
+					"Algo bastante complejo, ¿no te parece?"
+				];
 const DATA = "data";
 
 // # # # Handlers
@@ -55,12 +67,12 @@ const LaunchRequestHandler = {
 	attributes.stillThinking = false;
 	attributes.previousUserComment = "";
 	attributes.lastUserComment = "";
-	attributes.lastAlexaComment = LETS_TALK;
+	attributes.lastAlexaComment = MODEL_TAG + LETS_TALK;
 	handlerInput.attributesManager.setSessionAttributes(attributes);
-    return handlerInput.responseBuilder
-			  .speak(SALUTATION)
-			  .reprompt(SALUTATION_REPROMPT)
-			  .getResponse();
+	return handlerInput.responseBuilder
+				.speak(SALUTATION)
+				.reprompt(SALUTATION_REPROMPT)
+				.getResponse();
   },
 };
 
@@ -74,7 +86,7 @@ const ResponseHandler = {
   async handle(handlerInput) {
     console.log("Inside ResponseHandler - handle");
   	
-	// Retrieving user input
+	// Accessing user input
   	let slots = handlerInput.requestEnvelope.request.intent.slots;
 	var slotValue = "";
 	if(slots["Undefined"] != null) {
@@ -111,17 +123,17 @@ const ResponseHandler = {
 	}
 	
 	if(!slotValue.endsWith(".")) {
-		slotValue += ". ";
+		slotValue = USER_TAG + slotValue + ". ";
 	}
 	
 	// Preparing prompt with context
-	var talk;
+	var talk = PERSONALITY;
 	if(attributes.stillThinking){
-		talk = attributes.previousUserComment
+		talk += attributes.previousUserComment
 				+ attributes.lastAlexaComment
 				+ attributes.lastUserComment;
 	} else {
-		talk = attributes.lastUserComment
+		talk += attributes.lastUserComment
 				+ attributes.lastAlexaComment
 				+ slotValue;
 		attributes.previousUserComment = attributes.lastUserComment;
@@ -149,7 +161,7 @@ const ResponseHandler = {
 			req.write(JSON.stringify({
 				model: model,
 				prompt: message,
-				temperature: 0.5,
+				temperature: TEMPERATURE,
 				max_tokens: tokens
 			}));
 			req.end();
@@ -167,7 +179,7 @@ const ResponseHandler = {
 		}
 		attributes.stillThinking = false;
 		
-		// Checking if longest max_tokens answer before 5 seconds
+		// Checking if longest max_tokens answers before 5 seconds
 		var completion = null;
 		for(var i = 0; i < TIMEOUT_VALUE; i++) {
 			await new Promise(resolve => setTimeout(resolve, i * 500));
@@ -182,7 +194,7 @@ const ResponseHandler = {
 		if(completion == null || completion == "") {
 			attributes.stillThinking = true;
 			handlerInput.attributesManager.setSessionAttributes(attributes);
-			return handlerInput.responseBuilder.speak(TIMEOUT)
+			return handlerInput.responseBuilder.speak(TIMEOUT[getRandom(3)])
 				.reprompt(EJEM_REPROMPT)
 				.getResponse();
 		}
@@ -213,34 +225,38 @@ const ResponseHandler = {
 		if(answer == "") {
 			attributes.stillThinking = true;
 			handlerInput.attributesManager.setSessionAttributes(attributes);
-			return handlerInput.responseBuilder.speak(COMPLEX_TOPIC)
+			return handlerInput.responseBuilder.speak(COMPLEX_TOPIC[getRandom(1)])
 				.reprompt(EJEM_REPROMPT)
 				.getResponse();
 		}
 		
 		// Cleaning AI response
-		answer = answer.replace(/[\n|\t]/g, '')						// No new lines and tabs
+		answer = answer.replace(/[\n|\t]/g, '')						// New lines or tabs
 					   .replace(/\.[\s]*/g, '. ')					// Points without spaces
-					   .replace(/(\:\s*\-\s*)+/g, '. ')				// Start of list ": -"
+					   .replace(/(\:\s*\-\s*)+/g, '. ')				// Lists that start with ": -"
 					   .replace(/([\.\s]+\-\s*)+/g, ', ')			// Lists items "- one. - two.-three-four -five"
 					   .replace(/([0-9]+\.)$/g, ETC)				// Separate numbered lists "8. One 9. Two..."
 					   .replace(/\&/g, " y ")						// Alexa cannot say &
-					   .replace(/([0-9]+\.)/g, ", ");				// Short numbered list ". 9.$"
+					   .replace(/([0-9]\.[\sa-zA-Z])/g, ", ");		// Short numbered list ". 9.$"
 		
 		answer += INTERACTION_SEPARATOR;
 		console.log("Alexa processed answer: " + JSON.stringify(answer));
 		
 		// Storing just the first 100 characters and last 100 characters for next request
+		if(answer.lastIndexOf(MODEL_TAG) == -1) {
+			answer = MODEL_TAG + answer;
+		}
+		
 		attributes.lastAlexaComment = answer;
 		if(answer.length > 200) {
-			attributes.lastAlexaComment = answer.substring(0, 99) 
-										+ answer.substring(answer.length - 101, answer.length - 1);
+			attributes.lastAlexaComment = answer.substring(0, 99)
+							+ answer.substring(answer.length - 101, answer.length - 1);
 		}
 		console.log("Alexa stored answer: " + JSON.stringify(attributes.lastAlexaComment));
 		handlerInput.attributesManager.setSessionAttributes(attributes);
 		
 		// Retrieving complete AI response
-		return handlerInput.responseBuilder.speak(answer)
+		return handlerInput.responseBuilder.speak(answer.replace(MODEL_TAG, ''))
 				.reprompt(EJEM_REPROMPT)
 				.getResponse();
 	} catch(error) {
