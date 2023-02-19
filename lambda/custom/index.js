@@ -43,7 +43,7 @@ const EJEM_REPROMPT = "<amazon:effect name='whispered'>Ejem. </amazon:effect>";
 const ETC = " etcétera. ";
 const USER_TAG = "[Persona_A] ";
 const MODEL_TAG = "[Alexa] ";
-const PERSONALITY = "Alexa es cálida, humanista y le gusta la ciencia ficción. \n\n";
+const PERSONALITY = "Alexa es humana, cálida y le gusta la ciencia ficción. \n\n";
 const TIMEOUT = [
 					"Sigo pensando. ¿Sigues ahí?", 
 					"Es algo complejo, ¿me esperas?", 
