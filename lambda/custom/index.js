@@ -43,7 +43,14 @@ const EJEM_REPROMPT = "<amazon:effect name='whispered'>Ejem. </amazon:effect>";
 const ETC = " etcétera. ";
 const USER_TAG = "[Persona_A] ";
 const MODEL_TAG = "[Alexa] ";
-const PERSONALITY = "Alexa es humana, cálida y le gusta la ciencia ficción. \n\n";
+const PERSONALITY = "Actúa como Alexa. Es cálida y ama ";
+const TOPICS = [
+					PERSONALITY + "la ciencia ficción. \n\n",
+					PERSONALITY + "la fantasía y la magia. \n\n",
+					PERSONALITY + "explicar su opinión. \n\n",
+					PERSONALITY + "preguntar. \n\n",
+					PERSONALITY + "analizar. \n\n"
+				];
 const TIMEOUT = [
 					"Sigo pensando. ¿Sigues ahí?", 
 					"Es algo complejo, ¿me esperas?", 
@@ -52,7 +59,8 @@ const TIMEOUT = [
 				];
 const COMPLEX_TOPIC = [
 					"No se me viene nada a la mente, ¿tú que piensas?", 
-					"Algo bastante complejo, ¿no te parece?"
+					"Algo bastante complejo, ¿no te parece?", 
+					"Es un tema complicado, ¿no crees?"
 				];
 const DATA = "data";
 
@@ -87,7 +95,7 @@ const ResponseHandler = {
     console.log("Inside ResponseHandler - handle");
   	
 	// Accessing user input
-  	let slots = handlerInput.requestEnvelope.request.intent.slots;
+  let slots = handlerInput.requestEnvelope.request.intent.slots;
 	var slotValue = "";
 	if(slots["Undefined"] != null) {
 		slotValue = slots["Undefined"].value;
@@ -107,7 +115,7 @@ const ResponseHandler = {
 	// Waiting command
 	for(var wait in WAIT_COMMANDS) {
 		if(slotValue.toLowerCase().startsWith(WAIT_COMMANDS[wait])) {
-		return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(3)] + BREAK_10_SECS)
+		return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(CONFIRMATION.length)] + BREAK_10_SECS)
 				.reprompt(BREAK_10_SECS + WAITING_REPROMPT)
 				.getResponse();
 		}
@@ -117,7 +125,7 @@ const ResponseHandler = {
 	
 	// Repeating last AI response command
 	if(slotValue.toLowerCase().startsWith(REPEAT_COMMAND)) {
-		return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(3)] + attributes.lastAlexaComment)
+		return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(CONFIRMATION.length)] + attributes.lastAlexaComment)
 				.reprompt(CONFIRMATION_REPROMPT)
 				.getResponse();
 	}
@@ -127,7 +135,8 @@ const ResponseHandler = {
 	}
 	
 	// Preparing prompt with context
-	var talk = PERSONALITY;
+	// 7/10 not ask AND 3/10 maybe ask
+	var talk = TOPICS[getRandom(TOPICS.length)];
 	if(attributes.stillThinking){
 		talk += attributes.previousUserComment
 				+ attributes.lastAlexaComment
@@ -153,7 +162,7 @@ const ResponseHandler = {
 			}).on('error', (e) => {
 				console.error("Error in tokens " + tokens);
 				console.error(e);
-			});;
+			});
 			req.on('timeout', () => {
 				console.log("Timeout happened in tokens " + tokens);
 				req.abort();
@@ -162,7 +171,8 @@ const ResponseHandler = {
 				model: model,
 				prompt: message,
 				temperature: TEMPERATURE,
-				max_tokens: tokens
+				max_tokens: tokens,
+				stop: (getRandom(4) < 2) ? "¿" : null
 			}));
 			req.end();
 		}
@@ -183,7 +193,8 @@ const ResponseHandler = {
 		var completion = null;
 		for(var i = 0; i < TIMEOUT_VALUE; i++) {
 			await new Promise(resolve => setTimeout(resolve, i * 500));
-			if(longResult[DATA] != null) {
+			if(longResult[DATA] != null 
+				&& longResult[DATA].toString().trim().replace(MODEL_TAG, '') != "") {
 				completion = longResult[DATA];
 				break;
 			}
@@ -194,12 +205,12 @@ const ResponseHandler = {
 		if(completion == null || completion == "") {
 			attributes.stillThinking = true;
 			handlerInput.attributesManager.setSessionAttributes(attributes);
-			return handlerInput.responseBuilder.speak(TIMEOUT[getRandom(3)])
+			return handlerInput.responseBuilder.speak(TIMEOUT[getRandom(TIMEOUT.length)])
 				.reprompt(EJEM_REPROMPT)
 				.getResponse();
 		}
 		
-		var answer = JSON.parse(completion).choices[0].text;
+		var answer = JSON.parse(completion).choices[0].text.trim();
 		console.log("Alexa answer: " + JSON.stringify(answer));
 		
 		// Preventing AI to make multiple questions one after another
@@ -225,7 +236,7 @@ const ResponseHandler = {
 		if(answer == "") {
 			attributes.stillThinking = true;
 			handlerInput.attributesManager.setSessionAttributes(attributes);
-			return handlerInput.responseBuilder.speak(COMPLEX_TOPIC[getRandom(1)])
+			return handlerInput.responseBuilder.speak(COMPLEX_TOPIC[getRandom(COMPLEX_TOPIC.length)])
 				.reprompt(EJEM_REPROMPT)
 				.getResponse();
 		}
@@ -263,8 +274,8 @@ const ResponseHandler = {
 		console.log("Error in OpenAI request: " + error);
 	}
 	
-	return handlerInput.responseBuilder.speak(NOT_UNDERSTOOD[getRandom(2)])
-			.reprompt(NOT_UNDERSTOOD_REPROMPT[getRandom(2)])
+	return handlerInput.responseBuilder.speak(NOT_UNDERSTOOD[getRandom(NOT_UNDERSTOOD.length)])
+			.reprompt(NOT_UNDERSTOOD_REPROMPT[getRandom(NOT_UNDERSTOOD_REPROMPT.length)])
 			.getResponse();
   }
 };
@@ -307,8 +318,8 @@ const ErrorHandler = {
     console.log("Error handled: ${JSON.stringify(error)}");
     console.log("Handler Input: ${JSON.stringify(handlerInput)}");
     return handlerInput.responseBuilder
-      .speak(NOT_UNDERSTOOD[getRandom(2)])
-      .reprompt(NOT_UNDERSTOOD_REPROMPT[getRandom(2)])
+      .speak(NOT_UNDERSTOOD[getRandom(NOT_UNDERSTOOD.length)])
+      .reprompt(NOT_UNDERSTOOD_REPROMPT[getRandom(NOT_UNDERSTOOD_REPROMPT.length)])
       .getResponse();
   },
 };
