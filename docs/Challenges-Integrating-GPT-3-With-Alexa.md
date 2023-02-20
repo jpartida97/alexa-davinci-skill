@@ -39,9 +39,9 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
       <br/><br/>
 4. **Conversation prompt format.**
    <br/> \* GTP wasn’t completing the text as a conversation all the time. Sometimes it just continues completing 
-   the last messages if the separator is jut a new line.
+   the last messages if the separator is a new line.
    <br/> **\* Solution:**
-   - To **use tags** in order to differentiate the conversation participants, the user and the model.
+   - To **use tags** in order to differentiate the conversation participants, one for the user and another for the model.
         ```
         [Usuario] Hola, ¿cómo estás?
         [Modelo] Hola, estoy bien, ¿y tú?
