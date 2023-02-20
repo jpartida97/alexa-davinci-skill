@@ -43,13 +43,13 @@ const EJEM_REPROMPT = "<amazon:effect name='whispered'>Ejem. </amazon:effect>";
 const ETC = " etcétera. ";
 const USER_TAG = "[Persona_A] ";
 const MODEL_TAG = "[Alexa] ";
-const PERSONALITY = "Actúa como Alexa. Es cálida y ama ";
+const PERSONALITY = "Actúa como Alexa. Es cálida y ";
 const TOPICS = [
-					PERSONALITY + "la ciencia ficción. \n\n",
-					PERSONALITY + "la fantasía y la magia. \n\n",
-					PERSONALITY + "explicar su opinión. \n\n",
-					PERSONALITY + "preguntar. \n\n",
-					PERSONALITY + "analizar. \n\n"
+					PERSONALITY + "amable. \n\n",
+					PERSONALITY + "ama la fantasía y la magia. \n\n",
+					PERSONALITY + "ama explicar su opinión. \n\n",
+					PERSONALITY + "ama preguntar. \n\n",
+					PERSONALITY + "ama analizar. \n\n"
 				];
 const TIMEOUT = [
 					"Sigo pensando. ¿Sigues ahí?", 
@@ -135,7 +135,6 @@ const ResponseHandler = {
 	}
 	
 	// Preparing prompt with context
-	// 7/10 not ask AND 3/10 maybe ask
 	var talk = TOPICS[getRandom(TOPICS.length)];
 	if(attributes.stillThinking){
 		talk += attributes.previousUserComment
@@ -162,7 +161,7 @@ const ResponseHandler = {
 			}).on('error', (e) => {
 				console.error("Error in tokens " + tokens);
 				console.error(e);
-			});
+			});;
 			req.on('timeout', () => {
 				console.log("Timeout happened in tokens " + tokens);
 				req.abort();
@@ -177,7 +176,7 @@ const ResponseHandler = {
 			req.end();
 		}
 		
-		// Two max_tokens to ensure retrieve an answer in 8 seconds
+		// Two max_tokens to ensure retrieving an answer in 8 seconds
 		var longResult = {"data": null};
 		var shortResult = {"data": null};
 		if(attributes.stillThinking) {
