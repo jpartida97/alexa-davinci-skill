@@ -34,7 +34,7 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
     - I’ll **cut the context** to include only the first 100 chars, and the last 100, usually the AI says the topic in the first statement.
     - The  complexity of the topic increases the time of processing, **questions about Marxism can take more than 10 seconds**.
     - I decided to use directly the **HTTPS NodeJS package** to make the request and establish a timeout for the request.
-    - To prevent empty requests the Skill makes **two requests** with different parameters (using less max_tokens or changing the model to Curie) 
+    - To prevent empty responses the Skill makes **two requests** with different parameters (using less max_tokens or changing the model to Curie) 
       and retrieves the longest response in the 8 seconds time window.
       <br/><br/>
 4. **Conversation prompt format.**
