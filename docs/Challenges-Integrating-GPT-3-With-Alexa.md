@@ -23,7 +23,7 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
         ``` 
      <br/>
 2. **Dealing with lists.**
-   <br/> \* It doesn't sound natural to hear lists retrieved formats.
+   <br/> \* It doesn't sound natural to hear lists items with the retrieved formats.
    <br/> **\* Solution:**
    - I changed numbers and hyphens with commas.
     <br/><br/>
