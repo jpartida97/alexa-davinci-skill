@@ -241,13 +241,13 @@ const ResponseHandler = {
             }
 
             // Cleaning AI response
-            answer = answer.replace(/[\n|\t]/g, '')                    // New lines or tabs
-                        .replace(/\.[\s]*/g, '. ')                     // Points without spaces
-                        .replace(/(\:\s*\-\s*)+/g, '. ')               // Lists that start with ": -"
-                        .replace(/([\.\s]+\-\s*)+/g, ', ')             // Lists items "- one. - two.-three-four -five"
-                        .replace(/([0-9]+\.)$/g, ETC)                  // Separate numbered lists "8. One 9. Two..."
-                        .replace(/\&/g, " y ")                         // Alexa cannot say &
-                        .replace(/([0-9]\.[\sa-zA-Z])/g, ", ");        // Short numbered list ". 9.$"
+            answer = answer.replace(/[\n|\t]/g, '')                      // New lines or tabs
+                        .replace(/\.[\s]*/g, '. ')                       // Points without spaces
+                        .replace(/(\:\s*\-\s*)+/g, '. ')                 // Lists that start with ": -"
+                        .replace(/([\.\s]+\-\s*)+/g, ', ')               // Lists items "- one. - two.-three-four -five"
+                        .replace(/([0-9]+\.)$/g, ETC)                    // Separate numbered lists "8. One 9. Two..."
+                        .replace(/\&/g, " y ")                           // Alexa cannot say &
+                        .replace(/\.([\t\s]+[0-9]\.[\sa-zA-Z])/g, ", "); // Short numbered list ". 9.$"
         
             answer += INTERACTION_SEPARATOR;
             console.log("Alexa processed answer: " + JSON.stringify(answer));
