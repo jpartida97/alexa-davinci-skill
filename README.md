@@ -17,7 +17,15 @@ Maybe this kind of AI won't be able to show us something that we don't already k
 - The best use for this Alexa Skill is to make consecutive questions, build context and ask. Davinci AI **model isn't good for human/natural/engaging conversations**, as it cannot simulate humor or any other emotion-focused intention.
 
 ### How to execute the project
-https://github.com/jpartida97/alexa-davinci-skill/blob/main/docs/How-To-Execute.md
+\* https://github.com/jpartida97/alexa-davinci-skill/blob/main/docs/How-To-Execute.md
+
+### Challenges integrating GPT-3 with Alexa
+\* https://github.com/jpartida97/alexa-davinci-skill/blob/main/docs/Challenges-Integrating-GPT-3-With-Alexa.md
+- Dealing with incomplete/cut answers.
+- Dealing with lists.
+- 8 seconds to provide a response.
+- Conversation prompt format.
+- Questioning loop and monotonous conversations.
 
 ### How to talk with Alexa-Davinci skill
 - "Alexa, abre conversación inteligente." - (to open skill)
