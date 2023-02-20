@@ -59,7 +59,7 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
         [Alexa] Hola, estoy bien, ¿y tú?
         ```
      <br/>
-5. **Questioning loop.**
+5. **Questioning loop and monotonous conversations.**
    <br/> \* The model usually enters into a questioning loop, to every answer it responds with a question, it is a boring 
    conversation pattern.
    <br/> **\* Solution:**
