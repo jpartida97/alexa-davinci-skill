@@ -46,11 +46,11 @@ const USER_TAG = "[Persona_A] ";
 const MODEL_TAG = "[Alexa] ";
 const PERSONALITY = "Actúa como Alexa. Es cálida y ";
 const TOPICS = [
-                    PERSONALITY + "amable. \n\n",
-                    PERSONALITY + "ama la fantasía y la magia. \n\n",
-                    PERSONALITY + "ama explicar su opinión. \n\n",
-                    PERSONALITY + "ama preguntar. \n\n",
-                    PERSONALITY + "ama analizar. \n\n"
+                    PERSONALITY + "amable." + END_OF_TEXT,
+                    PERSONALITY + "ama la fantasía y la magia." + END_OF_TEXT,
+                    PERSONALITY + "ama explicar su opinión." + END_OF_TEXT,
+                    PERSONALITY + "ama preguntar." + END_OF_TEXT,
+                    PERSONALITY + "ama analizar." + END_OF_TEXT
                 ];
 const TIMEOUT = [
                     "Sigo pensando. ¿Sigues ahí?",
@@ -103,7 +103,7 @@ const ResponseHandler = {
 
         console.log("SlotValue: " + slotValue);
 
-        // Stopping Skill command
+        // Stop Skill command
         for(var stop in STOP_COMMANDS) {
             if(slotValue.toLowerCase().startsWith(STOP_COMMANDS[stop])) {
                 return handlerInput.responseBuilder.speak(STOP_CONFIRMATION_FAREWELL)
@@ -112,7 +112,7 @@ const ResponseHandler = {
             }
         }
 
-        // Waiting command
+        // Wait command
         for(var wait in WAIT_COMMANDS) {
             if(slotValue.toLowerCase().startsWith(WAIT_COMMANDS[wait])) {
             return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(CONFIRMATION.length)] + BREAK_10_SECS)
@@ -123,7 +123,7 @@ const ResponseHandler = {
 
         const attributes = handlerInput.attributesManager.getSessionAttributes();
 
-        // Repeating last AI response command
+        // Repeat last AI response command
         if(slotValue.toLowerCase().startsWith(REPEAT_COMMAND)) {
             return handlerInput.responseBuilder.speak(CONFIRMATION[getRandom(CONFIRMATION.length)] + attributes.lastAlexaComment)
                     .reprompt(CONFIRMATION_REPROMPT)
@@ -239,7 +239,7 @@ const ResponseHandler = {
                     .reprompt(EJEM_REPROMPT)
                     .getResponse();
             }
-
+	
             // Cleaning AI response
             answer = answer.replace(/[\n|\t]/g, '')                      // New lines or tabs
                         .replace(/\.[\s]*/g, '. ')                       // Points without spaces
@@ -249,14 +249,13 @@ const ResponseHandler = {
                         .replace(/\&/g, " y ")                           // Alexa cannot say &
                         .replace(/\.([\t\s]+[0-9]\.[\sa-zA-Z])/g, ", "); // Short numbered list ". 9.$"
         
-            answer += INTERACTION_SEPARATOR;
-            console.log("Alexa processed answer: " + JSON.stringify(answer));
-        
-            // Storing just the first 100 characters and last 100 characters for next request
             if(answer.lastIndexOf(MODEL_TAG) == -1) {
                 answer = MODEL_TAG + answer;
             }
+            answer += INTERACTION_SEPARATOR;
+            console.log("Alexa processed answer: " + JSON.stringify(answer));
             
+            // Storing just the first 100 characters and last 100 characters for next request
             attributes.lastAlexaComment = answer;
             if(answer.length > 200) {
                 attributes.lastAlexaComment = answer.substring(0, 99)
