@@ -2,6 +2,7 @@ const Alexa = require('ask-sdk-core');
 const https = require('https');
 
 // # # # OpenAI configuration
+
 const INCREASED_RESPONSE_LENGTH = 150;
 const DEFAULT_RESPONSE_LENGTH = 70;
 const TIMEOUT_VALUE = 5;
@@ -19,6 +20,7 @@ const options = {
 };
 
 // # # # String literals
+
 const OPENAI_DAVINCI_MODEL = "text-davinci-003";
 const OPENAI_CURIE_MODEL = "text-curie-001";
 const END_OF_TEXT = "\n\n";
@@ -63,6 +65,7 @@ const COMPLEX_TOPIC = [
                 ];
 
 // # # # Handlers
+
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return handlerInput.requestEnvelope.request.type === 'LaunchRequest';
@@ -239,11 +242,11 @@ const ResponseHandler = {
 
             // Cleaning AI response
             answer = answer.replace(/[\n|\t]/g, '')                    // New lines or tabs
-                        .replace(/\.[\s]*/g, '. ')                    // Points without spaces
-                        .replace(/(\:\s*\-\s*)+/g, '. ')                // Lists that start with ": -"
-                        .replace(/([\.\s]+\-\s*)+/g, ', ')            // Lists items "- one. - two.-three-four -five"
-                        .replace(/([0-9]+\.)$/g, ETC)                // Separate numbered lists "8. One 9. Two..."
-                        .replace(/\&/g, " y ")                        // Alexa cannot say &
+                        .replace(/\.[\s]*/g, '. ')                     // Points without spaces
+                        .replace(/(\:\s*\-\s*)+/g, '. ')               // Lists that start with ": -"
+                        .replace(/([\.\s]+\-\s*)+/g, ', ')             // Lists items "- one. - two.-three-four -five"
+                        .replace(/([0-9]+\.)$/g, ETC)                  // Separate numbered lists "8. One 9. Two..."
+                        .replace(/\&/g, " y ")                         // Alexa cannot say &
                         .replace(/([0-9]\.[\sa-zA-Z])/g, ", ");        // Short numbered list ". 9.$"
         
             answer += INTERACTION_SEPARATOR;
