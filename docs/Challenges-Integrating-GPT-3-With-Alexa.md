@@ -81,3 +81,24 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
         [Persona_A] Hola, ¿cómo estás?
         [Alexa] Hola, estoy bien, ¿y tú?
         ```
+     <br/>
+5. **Keeping conversation context.**
+   <br/> \* Sending the last interactions as context, along with the current user message is useful, but the big picture is lost really fast, and 
+   this usually means having incoherent conversations.
+   <br/> **\* Solution:**
+    - I ask the model to summarize the conversation topic in few words, to include this in the beginning of the message.
+        ```
+        Dime el tema de conversación: {
+        Alexa es amable y hablamos de: "Los personajes de Lego".
+        [Persona_A] qué opinas de los legos.
+        [Alexa] Las figuras de Lego son una excelente forma de estimular la creatividad de los niños y de 
+        desarrollar sus habilidades de construcción y de solución de problemas.
+        }
+        ``` 
+    - I do not format this response and delimit the response inside double quotes.
+        ```
+        Alexa es amable y hablamos de: "Los personajes de Lego".
+        [Persona_A] qué opinas de los legos.
+        [Alexa] Las figuras de Lego son una excelente forma de estimular la creatividad de los niños y de 
+        desarrollar sus habilidades de construcción y de solución de problemas.
+        ``` 
