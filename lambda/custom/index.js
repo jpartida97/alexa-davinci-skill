@@ -5,6 +5,7 @@ const https = require('https');
 
 const INCREASED_RESPONSE_LENGTH = 150;
 const DEFAULT_RESPONSE_LENGTH = 70;
+const TOPIC_LENGTH = 30;
 const TIMEOUT_VALUE = 5;
 const TEMPERATURE = 0.6;
 const options = {
@@ -21,12 +22,13 @@ const options = {
 
 // # # # String literals
 
+const MAX_COUNTER = 2;
 const OPENAI_DAVINCI_MODEL = "text-davinci-003";
 const OPENAI_CURIE_MODEL = "text-curie-001";
 const END_OF_TEXT = "\n\n";
 const INTERACTION_SEPARATOR = END_OF_TEXT + " ";
 const LETS_TALK = "Vamos a conversar. " + INTERACTION_SEPARATOR;
-const SALUTATION = "Hola, ¿de qué quieres hablar?";
+const SALUTATION = ["Halo, ¿de qué quieres hablar?", "Hola, ¿qué sucede?", "Hola, ¿qué tal?"];
 const SALUTATION_REPROMPT = "¿Algo te ha llamado la atención últimamente?";
 const STOP_COMMANDS = ["es suficiente", "adios", "nos vemos", "basta", "eso es todo"];
 const STOP_CONFIRMATION_FAREWELL = "Entendido, fue un placer. ";
@@ -34,6 +36,7 @@ const SIMPLE_FAREWELL = "Nos vemos. ";
 const CONFIRMATION = ["Está bien. ", "De acuerdo. ", "Seguro. "];
 const CONFIRMATION_REPROMPT = "¿Entonces?";
 const REPEAT_COMMAND = "repite";
+const RESUME_TOPIC = "Dime el tema de conversacion en 15 palabras.";
 const WAIT_COMMANDS = ["espera", "sigue esperando"];
 const BREAK_10_SECS = "<break time='10s'/>";
 const WAITING_REPROMPT = "<amazon:effect name='whispered'>Sigo aquí.</amazon:effect>";
@@ -43,14 +46,12 @@ const EJEM_REPROMPT = "<amazon:effect name='whispered'>Ejem.</amazon:effect>";
 const ETC = " etcétera. ";
 const DATA = "data";
 const USER_TAG = "[Persona_A] ";
-const MODEL_TAG = "[Alexa] ";
-const PERSONALITY = "Actúa como Alexa. Es cálida y ";
+const MODEL_NAME = "Alexa";
+const MODEL_TAG = "[" + MODEL_NAME + "] ";
 const TOPICS = [
-                    PERSONALITY + "amable." + END_OF_TEXT,
-                    PERSONALITY + "ama la fantasía y la magia." + END_OF_TEXT,
-                    PERSONALITY + "ama explicar su opinión." + END_OF_TEXT,
-                    PERSONALITY + "ama preguntar." + END_OF_TEXT,
-                    PERSONALITY + "ama analizar." + END_OF_TEXT
+                    MODEL_NAME + " es cálida",
+                    MODEL_NAME + " ama explicar su opinión",
+                    MODEL_NAME + " ama analizar"
                 ];
 const TIMEOUT = [
                     "Sigo pensando. ¿Sigues ahí?",
@@ -75,10 +76,12 @@ const LaunchRequestHandler = {
         attributes.stillThinking = false;
         attributes.previousUserComment = "";
         attributes.lastUserComment = "";
+        attributes.topic = END_OF_TEXT;
+        attributes.counter = MAX_COUNTER - 1;
         attributes.lastAlexaComment = MODEL_TAG + LETS_TALK;
         handlerInput.attributesManager.setSessionAttributes(attributes);
         return handlerInput.responseBuilder
-                .speak(SALUTATION)
+                .speak(SALUTATION[getRandom(SALUTATION.length)])
                 .reprompt(SALUTATION_REPROMPT)
                 .getResponse();
     },
@@ -129,24 +132,25 @@ const ResponseHandler = {
                     .reprompt(CONFIRMATION_REPROMPT)
                     .getResponse();
         }
-
+        
+        slotValue = USER_TAG + slotValue;
         if(!slotValue.endsWith(".")) {
-            slotValue = USER_TAG + slotValue + ". ";
+            slotValue += ". ";
         }
 
         // Preparing prompt with context
-        var talk = TOPICS[getRandom(TOPICS.length)];
-        if(attributes.stillThinking){
-            talk += attributes.previousUserComment
-                    + attributes.lastAlexaComment
-                    + attributes.lastUserComment;
-        } else {
-            talk += attributes.lastUserComment
-                    + attributes.lastAlexaComment
-                    + slotValue;
-            attributes.previousUserComment = attributes.lastUserComment;
-            attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
-        }
+        var talk = TOPICS[getRandom(TOPICS.length)] + attributes.topic;
+		if(attributes.stillThinking){
+			talk += attributes.previousUserComment
+					+ attributes.lastAlexaComment
+					+ attributes.lastUserComment;
+		} else {
+			talk += attributes.lastUserComment
+					+ attributes.lastAlexaComment
+					+ slotValue;
+			attributes.previousUserComment = attributes.lastUserComment;
+			attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
+		}
         console.log("Talk: " + JSON.stringify(talk));
 
         try {
@@ -179,6 +183,11 @@ const ResponseHandler = {
             // Two max_tokens to ensure retrieve an answer in 8 seconds
             var longResult = {"data": null};
             var shortResult = {"data": null};
+            var topicResult = {"data": null};
+			attributes.counter++;
+			if(attributes.counter == MAX_COUNTER) {
+				openai("{" + talk + "} " + RESUME_TOPIC, TOPIC_LENGTH, topicResult, OPENAI_DAVINCI_MODEL);
+			}
             if(attributes.stillThinking) {
                 openai(talk + END_OF_TEXT, DEFAULT_RESPONSE_LENGTH, longResult, OPENAI_DAVINCI_MODEL);
                 openai(talk + END_OF_TEXT, DEFAULT_RESPONSE_LENGTH, shortResult, OPENAI_CURIE_MODEL);
@@ -211,26 +220,14 @@ const ResponseHandler = {
 
             var answer = JSON.parse(completion).choices[0].text.trim();
             console.log("Alexa answer: " + JSON.stringify(answer));
+            if(topicResult[DATA] != null) {
+				var newTopic = JSON.parse(topicResult[DATA]).choices[0].text.trim().replaceAll(MODEL_TAG, '');
+				attributes.counter = 0;
+                attributes.topic = " y hablamos de: {" + newTopic + "}. \n\n";
+            }
 
             // Preventing AI to make multiple questions one after another
-            var questionIndex = answer.search(/\?/g);
-            if(questionIndex != -1) {
-                answer = answer.substring(0, questionIndex + 1);
-            }
-
-            // Preventing incomplete responses
-            if(!answer.endsWith("?") && !answer.endsWith("!")) {
-                var lastComma = answer.lastIndexOf(",");
-                var lastPoint = answer.lastIndexOf(".");
-                var lastExclamation = answer.lastIndexOf("!");
-                if(lastPoint == -1 && lastComma != -1) {
-                    answer = answer.substring(0, lastComma + 1) + ETC;
-                } else if(lastExclamation > lastPoint) {
-                    answer = answer.substring(0, lastExclamation + 1);
-                } else {
-                    answer = answer.substring(0, lastPoint + 1);
-                }
-            }
+            answer = preventCutAnswer(answer);
 
             if(answer == "") {
                 attributes.stillThinking = true;
@@ -239,20 +236,13 @@ const ResponseHandler = {
                     .reprompt(EJEM_REPROMPT)
                     .getResponse();
             }
-	
+    
             // Cleaning AI response
-            answer = answer.replace(/[\n|\t]/g, '')                      // New lines or tabs
-                        .replace(/\.[\s]*/g, '. ')                       // Points without spaces
-                        .replace(/(\:\s*\-\s*)+/g, '. ')                 // Lists that start with ": -"
-                        .replace(/([\.\s]+\-\s*)+/g, ', ')               // Lists items "- one. - two.-three-four -five"
-                        .replace(/([0-9]+\.)$/g, ETC)                    // Separate numbered lists "8. One 9. Two..."
-                        .replace(/\&/g, " y ")                           // Alexa cannot say &
-                        .replace(/\.([\t\s]+[0-9]\.[\sa-zA-Z])/g, ", "); // Short numbered list ". 9.$"
+			answer = cleanAnswer(answer) + INTERACTION_SEPARATOR;
         
             if(answer.lastIndexOf(MODEL_TAG) == -1) {
                 answer = MODEL_TAG + answer;
             }
-            answer += INTERACTION_SEPARATOR;
             console.log("Alexa processed answer: " + JSON.stringify(answer));
             
             // Storing just the first 100 characters and last 100 characters for next request
@@ -326,6 +316,37 @@ const ErrorHandler = {
 
 function getRandom(max) {
     return Math.floor(Math.random() * max);
+}
+
+function preventCutAnswer(answer) {
+    var questionIndex = answer.search(/\?/g);
+	if(questionIndex != -1) {
+		answer = answer.substring(0, questionIndex + 1);
+	}
+	// Preventing incomplete responses
+	if(!answer.endsWith("?") && !answer.endsWith("!")) {
+		var lastComma = answer.lastIndexOf(",");
+		var lastPoint = answer.lastIndexOf(".");
+		var lastExclamation = answer.lastIndexOf("!");
+		if(lastPoint == -1 && lastComma != -1) {
+			answer = answer.substring(0, lastComma + 1) + ETC;
+		} else if(lastExclamation > lastPoint) {
+			answer = answer.substring(0, lastExclamation + 1);
+		} else {
+			answer = answer.substring(0, lastPoint + 1);
+		}
+	}
+	return answer;
+}
+
+function cleanAnswer(answer) {
+	return answer.replace(/[\n|\t]/g, '')                        // New lines or tabs
+                .replace(/\.[\s]*/g, '. ')                       // Points without spaces
+                .replace(/(\:\s*\-\s*)+/g, '. ')                 // Lists that start with ": -"
+                .replace(/([\.\s]+\-\s*)+/g, ', ')               // Lists items "- one. - two.-three-four -five"
+                .replace(/([0-9]+\.)$/g, ETC)                    // Separate numbered lists "8. One 9. Two..."
+                .replace(/\&/g, " y ")                           // Alexa cannot say &
+                .replace(/\.([\t\s]+[0-9]\.[\sa-zA-Z])/g, ", "); // Short numbered list ". 9.$"
 }
 
 // # # # Exporting AWS Lambda Function
