@@ -25,7 +25,7 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
 2. **Dealing with lists.**
    <br/> \* It doesn't sound natural to hear lists items with the retrieved formats.
    <br/> **\* Solution:**
-   - I changed numbers and hyphens with commas.
+   - I interchanged the numbers and hyphens with commas.
     <br/><br/>
 3. **8 seconds to provide a response.**
    <br/> \* In this scenario the Alexa Skill closes the connection with AWS Lambda ([#4-tips-for-implementing-device-discovery-in-your-smart-home-skills](https://developer.amazon.com/en-US/blogs/alexa/device-makers/2019/04/4-tips-for-implementing-device-discovery-in-your-smart-home-skills)).
@@ -86,10 +86,10 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
    <br/> \* Sending the last interactions as context, along with the current user message is useful, but the big picture is lost really fast, and 
    this usually means having incoherent conversations.
    <br/> **\* Solution:**
-    - I ask the model to summarize the conversation topic in few words, to include this in the beginning of the message.
+    - I make another HTTP request to the model to summarize the conversation topic in few tokens, to include this in the beginning of the message.
         ```
         Dime el tema de conversación: {
-        Alexa es amable y hablamos de: "Los personajes de Lego".
+        Alexa [random_modifier] y hablamos de: "[summaryzed_conversation_topic]".
         [Persona_A] qué opinas de los legos.
         [Alexa] Las figuras de Lego son una excelente forma de estimular la creatividad de los niños y de 
         desarrollar sus habilidades de construcción y de solución de problemas.
@@ -97,7 +97,7 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
         ``` 
     - I do not format this response and delimit the response inside double quotes.
         ```
-        Alexa es amable y hablamos de: "Los personajes de Lego".
+        Alexa [random_modifier] y hablamos de: "[summaryzed_conversation_topic]".
         [Persona_A] qué opinas de los legos.
         [Alexa] Las figuras de Lego son una excelente forma de estimular la creatividad de los niños y de 
         desarrollar sus habilidades de construcción y de solución de problemas.
