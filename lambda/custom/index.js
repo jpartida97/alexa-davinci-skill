@@ -36,7 +36,7 @@ const SIMPLE_FAREWELL = "Nos vemos. ";
 const CONFIRMATION = ["Está bien. ", "De acuerdo. ", "Seguro. "];
 const CONFIRMATION_REPROMPT = "¿Entonces?";
 const REPEAT_COMMAND = "repite";
-const RESUME_TOPIC = "Dime el tema de conversacion en 15 palabras.";
+const RESUME_TOPIC = "Dime el tema de conversacion en 15 palabras: ";
 const WAIT_COMMANDS = ["espera", "sigue esperando"];
 const BREAK_10_SECS = "<break time='10s'/>";
 const WAITING_REPROMPT = "<amazon:effect name='whispered'>Sigo aquí.</amazon:effect>";
@@ -186,7 +186,7 @@ const ResponseHandler = {
             var topicResult = {"data": null};
             attributes.counter++;
             if(attributes.counter == MAX_COUNTER) {
-                openai("{" + talk + "} " + RESUME_TOPIC, TOPIC_LENGTH, topicResult, OPENAI_DAVINCI_MODEL);
+                openai(RESUME_TOPIC + "{" + talk + "}", TOPIC_LENGTH, topicResult, OPENAI_DAVINCI_MODEL);
             }
             if(attributes.stillThinking) {
                 openai(talk + END_OF_TEXT, DEFAULT_RESPONSE_LENGTH, longResult, OPENAI_DAVINCI_MODEL);
@@ -223,7 +223,9 @@ const ResponseHandler = {
             if(topicResult[DATA] != null) {
                 var newTopic = JSON.parse(topicResult[DATA]).choices[0].text.trim().replaceAll(MODEL_TAG, '');
                 attributes.counter = 0;
-                attributes.topic = " y hablamos de: {" + newTopic + "}. \n\n";
+                if(newTopic != "") {
+                    attributes.topic = " y hablamos de: \"" + newTopic + "\". \n\n";
+                }
             }
 
             // Preventing AI to make multiple questions one after another
@@ -340,13 +342,13 @@ function preventCutAnswer(answer) {
 }
 
 function cleanAnswer(answer) {
-    return answer.replace(/[\n|\t]/g, '')                            // New lines or tabs
-                    .replace(/\.[\s]*/g, '. ')                       // Points without spaces
-                    .replace(/(\:\s*\-\s*)+/g, '. ')                 // Lists that start with ": -"
-                    .replace(/([\.\s]+\-\s*)+/g, ', ')               // Lists items "- one. - two.-three-four -five"
-                    .replace(/([0-9]+\.)$/g, ETC)                    // Separate numbered lists "8. One 9. Two..."
-                    .replace(/\&/g, " y ")                           // Alexa cannot say &
-                    .replace(/\.([\t\s]+[0-9]\.[\sa-zA-Z])/g, ", "); // Short numbered list ". 9.$"
+    return answer.replace(/[\n|\t]/g, '')                        // New lines or tabs
+                .replace(/\.[\s]*/g, '. ')                       // Points without spaces
+                .replace(/(\:\s*\-\s*)+/g, '. ')                 // Lists that start with ": -"
+                .replace(/([\.\s]+\-\s*)+/g, ', ')               // Lists items "- one. - two.-three-four -five"
+                .replace(/([0-9]+\.)$/g, ETC)                    // Separate numbered lists "8. One 9. Two..."
+                .replace(/\&/g, " y ")                           // Alexa cannot say &
+                .replace(/\.([\t\s]+[0-9]\.[\sa-zA-Z])/g, ", "); // Short numbered list ". 9.$"
 }
 
 // # # # Exporting AWS Lambda Function
