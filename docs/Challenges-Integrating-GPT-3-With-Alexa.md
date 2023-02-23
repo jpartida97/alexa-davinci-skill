@@ -95,7 +95,7 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
         desarrollar sus habilidades de construcción y de solución de problemas.
         }
         ``` 
-    - I do not format this response and delimit the response inside double quotes.
+    - I do not format this response and just delimit the response inside double quotes.
         ```
         Alexa [random_modifier] y hablamos de: "[summaryzed_conversation_topic]".
         [Persona_A] qué opinas de los legos.
