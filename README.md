@@ -26,6 +26,7 @@ Maybe this kind of AI won't be able to show us something that we don't already k
 - 8 seconds to provide a response.
 - Conversation prompt format.
 - Questioning loop and monotonous conversations.
+- Keeping conversation context.
 
 ### How to talk with Alexa-Davinci skill
 - "Alexa, abre conversación inteligente." - (to open skill)
