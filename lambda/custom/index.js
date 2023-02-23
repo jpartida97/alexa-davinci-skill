@@ -140,17 +140,17 @@ const ResponseHandler = {
 
         // Preparing prompt with context
         var talk = TOPICS[getRandom(TOPICS.length)] + attributes.topic;
-		if(attributes.stillThinking){
-			talk += attributes.previousUserComment
-					+ attributes.lastAlexaComment
-					+ attributes.lastUserComment;
-		} else {
-			talk += attributes.lastUserComment
-					+ attributes.lastAlexaComment
-					+ slotValue;
-			attributes.previousUserComment = attributes.lastUserComment;
-			attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
-		}
+        if(attributes.stillThinking){
+            talk += attributes.previousUserComment
+                    + attributes.lastAlexaComment
+                    + attributes.lastUserComment;
+        } else {
+            talk += attributes.lastUserComment
+                    + attributes.lastAlexaComment
+                    + slotValue;
+            attributes.previousUserComment = attributes.lastUserComment;
+            attributes.lastUserComment = slotValue + INTERACTION_SEPARATOR;
+        }
         console.log("Talk: " + JSON.stringify(talk));
 
         try {
@@ -184,10 +184,10 @@ const ResponseHandler = {
             var longResult = {"data": null};
             var shortResult = {"data": null};
             var topicResult = {"data": null};
-			attributes.counter++;
-			if(attributes.counter == MAX_COUNTER) {
-				openai("{" + talk + "} " + RESUME_TOPIC, TOPIC_LENGTH, topicResult, OPENAI_DAVINCI_MODEL);
-			}
+            attributes.counter++;
+            if(attributes.counter == MAX_COUNTER) {
+                openai("{" + talk + "} " + RESUME_TOPIC, TOPIC_LENGTH, topicResult, OPENAI_DAVINCI_MODEL);
+            }
             if(attributes.stillThinking) {
                 openai(talk + END_OF_TEXT, DEFAULT_RESPONSE_LENGTH, longResult, OPENAI_DAVINCI_MODEL);
                 openai(talk + END_OF_TEXT, DEFAULT_RESPONSE_LENGTH, shortResult, OPENAI_CURIE_MODEL);
@@ -221,8 +221,8 @@ const ResponseHandler = {
             var answer = JSON.parse(completion).choices[0].text.trim();
             console.log("Alexa answer: " + JSON.stringify(answer));
             if(topicResult[DATA] != null) {
-				var newTopic = JSON.parse(topicResult[DATA]).choices[0].text.trim().replaceAll(MODEL_TAG, '');
-				attributes.counter = 0;
+                var newTopic = JSON.parse(topicResult[DATA]).choices[0].text.trim().replaceAll(MODEL_TAG, '');
+                attributes.counter = 0;
                 attributes.topic = " y hablamos de: {" + newTopic + "}. \n\n";
             }
 
@@ -238,7 +238,7 @@ const ResponseHandler = {
             }
     
             // Cleaning AI response
-			answer = cleanAnswer(answer) + INTERACTION_SEPARATOR;
+            answer = cleanAnswer(answer) + INTERACTION_SEPARATOR;
         
             if(answer.lastIndexOf(MODEL_TAG) == -1) {
                 answer = MODEL_TAG + answer;
@@ -320,33 +320,33 @@ function getRandom(max) {
 
 function preventCutAnswer(answer) {
     var questionIndex = answer.search(/\?/g);
-	if(questionIndex != -1) {
-		answer = answer.substring(0, questionIndex + 1);
-	}
-	// Preventing incomplete responses
-	if(!answer.endsWith("?") && !answer.endsWith("!")) {
-		var lastComma = answer.lastIndexOf(",");
-		var lastPoint = answer.lastIndexOf(".");
-		var lastExclamation = answer.lastIndexOf("!");
-		if(lastPoint == -1 && lastComma != -1) {
-			answer = answer.substring(0, lastComma + 1) + ETC;
-		} else if(lastExclamation > lastPoint) {
-			answer = answer.substring(0, lastExclamation + 1);
-		} else {
-			answer = answer.substring(0, lastPoint + 1);
-		}
-	}
-	return answer;
+    if(questionIndex != -1) {
+        answer = answer.substring(0, questionIndex + 1);
+    }
+    // Preventing incomplete responses
+    if(!answer.endsWith("?") && !answer.endsWith("!")) {
+        var lastComma = answer.lastIndexOf(",");
+        var lastPoint = answer.lastIndexOf(".");
+        var lastExclamation = answer.lastIndexOf("!");
+        if(lastPoint == -1 && lastComma != -1) {
+            answer = answer.substring(0, lastComma + 1) + ETC;
+        } else if(lastExclamation > lastPoint) {
+            answer = answer.substring(0, lastExclamation + 1);
+        } else {
+            answer = answer.substring(0, lastPoint + 1);
+        }
+    }
+    return answer;
 }
 
 function cleanAnswer(answer) {
-	return answer.replace(/[\n|\t]/g, '')                        // New lines or tabs
-                .replace(/\.[\s]*/g, '. ')                       // Points without spaces
-                .replace(/(\:\s*\-\s*)+/g, '. ')                 // Lists that start with ": -"
-                .replace(/([\.\s]+\-\s*)+/g, ', ')               // Lists items "- one. - two.-three-four -five"
-                .replace(/([0-9]+\.)$/g, ETC)                    // Separate numbered lists "8. One 9. Two..."
-                .replace(/\&/g, " y ")                           // Alexa cannot say &
-                .replace(/\.([\t\s]+[0-9]\.[\sa-zA-Z])/g, ", "); // Short numbered list ". 9.$"
+    return answer.replace(/[\n|\t]/g, '')                            // New lines or tabs
+                    .replace(/\.[\s]*/g, '. ')                       // Points without spaces
+                    .replace(/(\:\s*\-\s*)+/g, '. ')                 // Lists that start with ": -"
+                    .replace(/([\.\s]+\-\s*)+/g, ', ')               // Lists items "- one. - two.-three-four -five"
+                    .replace(/([0-9]+\.)$/g, ETC)                    // Separate numbered lists "8. One 9. Two..."
+                    .replace(/\&/g, " y ")                           // Alexa cannot say &
+                    .replace(/\.([\t\s]+[0-9]\.[\sa-zA-Z])/g, ", "); // Short numbered list ". 9.$"
 }
 
 // # # # Exporting AWS Lambda Function
