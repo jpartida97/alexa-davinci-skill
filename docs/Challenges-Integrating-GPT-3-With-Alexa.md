@@ -13,7 +13,7 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
             var lastPoint = answer.lastIndexOf(".");
             var lastExclamation = answer.lastIndexOf("!");
             if(lastPoint == -1 && lastComma != -1) {
-                answer = answer.substring(0, lastComma + 1) + " etcetera. ";
+                answer = answer.substring(0, lastComma + 1) + " etc. ";
             } else if(lastExclamation > lastPoint) {
                 answer = answer.substring(0, lastExclamation + 1);
             } else {
@@ -31,7 +31,7 @@ notes about this, here a list of challenges faced integrating GPT-3 with Alexa.
    <br/> \* In this scenario the Alexa Skill closes the connection with AWS Lambda ([#4-tips-for-implementing-device-discovery-in-your-smart-home-skills](https://developer.amazon.com/en-US/blogs/alexa/device-makers/2019/04/4-tips-for-implementing-device-discovery-in-your-smart-home-skills)).
    <br/> **\* Solution:**
     - I tried to use an **async function** but it seems the Lambda function won’t retrieve a response until all the threads (Promises) complete their execution.
-    - I’ll **cut the context** to include only the first 100 chars, and the last 100, usually the AI says the topic in the first statement.
+    - I **cut the context** to include only the first 100 chars, and the last 100, usually the AI says the topic in the first statement.
     - The  complexity of the topic increases the time of processing, **questions about Marxism can take more than 10 seconds**.
     - I decided to use directly the **HTTPS NodeJS package** to make the request and establish a timeout for the request.
     - To prevent empty responses the Skill makes **two requests** with different parameters (using less max_tokens or changing the model to Curie) 
